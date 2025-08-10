@@ -1,0 +1,6 @@
+
+{
+  "name": "Club de Pesca y Deportes Náuticos \"Monday\"",
+  "description": "Una aplicación web para gestionar competencias de pesca deportiva del Club de Pesca y Deportes Náuticos \"Monday\", incluyendo registro de equipos, capturas, tablas de clasificación en tiempo real y reportes generados por IA.",
+  "requestFramePermissions": []
+}
