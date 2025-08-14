@@ -1,13 +1,8 @@
-
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useConcursantes } from '@/context/ConcursantesContext';
-import type { Page } from '@/types';
 
-// La prop `concursantes` se elimina, ahora se obtiene del contexto.
-interface HomeProps {
-    setActivePage: (page: Page) => void;
-}
-
+// Componente de botón reutilizable para el menú principal
 const ActionButton: React.FC<{ icon: string; title: string; description: string; onClick: () => void; }> = ({ icon, title, description, onClick }) => (
     <button
         onClick={onClick}
@@ -24,15 +19,12 @@ const ActionButton: React.FC<{ icon: string; title: string; description: string;
     </button>
 );
 
-
-const Home: React.FC<HomeProps> = ({ setActivePage }) => {
-    // Se obtienen los datos y el estado de carga desde el contexto.
+// Componente principal de la página de inicio
+const Home: React.FC = () => {
+    const navigate = useNavigate(); // Hook para la navegación
     const { concursantes: concursantesCtx, loading } = useConcursantes();
-
-    // Se aplica el fallback para evitar errores si los datos son undefined/null.
     const concursantes = concursantesCtx ?? [];
 
-    // Se añade el render de estado de carga.
     if (loading) {
         return <p>Cargando datos de la competencia...</p>;
     }
@@ -44,57 +36,59 @@ const Home: React.FC<HomeProps> = ({ setActivePage }) => {
                 <p className="mt-2 text-lg text-gray-600">Gestione todos los aspectos de la competencia de pesca desde aquí.</p>
             </div>
 
+            {/* Menú de acciones con navegación corregida */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ActionButton 
                     icon="fa-users" 
                     title="Gestionar Concursantes" 
                     description="Añadir, ver, editar y eliminar equipos."
-                    onClick={() => setActivePage('concursantes')}
+                    onClick={() => navigate('/concursantes')}
                 />
                  <ActionButton 
                     icon="fa-fish-fins" 
                     title="Gestionar Especies" 
                     description="Configurar especies, puntos y medidas."
-                    onClick={() => setActivePage('especies')}
+                    onClick={() => navigate('/especies')}
                 />
                 <ActionButton 
                     icon="fa-plus-circle" 
                     title="Registrar Captura" 
                     description="Introducir una nueva captura para un equipo."
-                    onClick={() => setActivePage('register')}
+                    onClick={() => navigate('/register')}
                 />
                 <ActionButton 
                     icon="fa-trophy" 
                     title="Ver Clasificación" 
                     description="Consultar la tabla de líderes en tiempo real."
-                    onClick={() => setActivePage('leaderboard')}
+                    onClick={() => navigate('/leaderboard')}
                 />
                  <ActionButton 
                     icon="fa-chart-pie" 
                     title="Ver Dashboard" 
                     description="Estadísticas y reporte del día."
-                    onClick={() => setActivePage('dashboard')}
+                    onClick={() => navigate('/dashboard')}
                 />
                  <ActionButton 
                     icon="fa-cog" 
                     title="Ajustes del Sistema" 
                     description="Cargar el logotipo y configurar otros detalles."
-                    onClick={() => setActivePage('settings')}
+                    onClick={() => navigate('/settings')}
                 />
                 <ActionButton 
                     icon="fa-award" 
                     title="Generar Certificados" 
                     description="Crear e imprimir diplomas para los ganadores."
-                    onClick={() => setActivePage('certificates')}
+                    onClick={() => navigate('/certificates')}
                 />
                 <ActionButton 
                     icon="fa-scroll" 
                     title="Ver Reglamento" 
                     description="Consultar las reglas oficiales de la competencia."
-                    onClick={() => setActivePage('rules')}
+                    onClick={() => navigate('/rules')}
                 />
             </div>
 
+            {/* Sección de resumen de equipos */}
              <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Equipos Inscritos ({concursantes.length})</h2>
                 {concursantes.length > 0 ? (
@@ -119,7 +113,7 @@ const Home: React.FC<HomeProps> = ({ setActivePage }) => {
                     </table>
                     {concursantes.length > 5 && (
                         <div className="text-center mt-4">
-                             <button onClick={() => setActivePage('concursantes')} className="text-sm font-medium text-blue-600 hover:underline">
+                             <button onClick={() => navigate('/concursantes')} className="text-sm font-medium text-blue-600 hover:underline">
                                 Ver todos los equipos...
                             </button>
                         </div>
@@ -129,7 +123,7 @@ const Home: React.FC<HomeProps> = ({ setActivePage }) => {
                     <div className="text-center text-gray-500 py-8">
                         <i className="fa-solid fa-ship fa-2x mb-2"></i>
                         <p>Aún no hay equipos inscritos.</p>
-                        <button onClick={() => setActivePage('concursanteForm')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <button onClick={() => navigate('/concursantes')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                             ¡Inscribe el primer equipo!
                         </button>
                     </div>

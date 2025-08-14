@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useEspecies } from '../context/EspeciesContext';
+import { useEspecies } from '@/context/EspeciesContext';
 import type { Species, PiecePoints } from '@/services/firestoreService';
 
 interface EspeciesFormProps {
@@ -19,14 +19,12 @@ const EspeciesForm: React.FC<EspeciesFormProps> = ({ initialData, onFormClose })
     if (initialData) {
       setName(initialData.name);
       setMandatorySize(initialData.mandatorySize);
-      // Pad the piecePoints array to always have 3 entries for the form
-      const paddedPoints = [...initialData.piecePoints];
+      const paddedPoints = [...(initialData.piecePoints || [])];
       while (paddedPoints.length < 3) {
         paddedPoints.push({});
       }
       setPiecePoints(paddedPoints);
     } else {
-      // Reset form for new entry
       setName('');
       setPiecePoints([{}, {}, {}]);
       setMandatorySize(true);
@@ -42,7 +40,6 @@ const EspeciesForm: React.FC<EspeciesFormProps> = ({ initialData, onFormClose })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) {
       alert('El nombre de la especie es obligatorio.');
       return;
@@ -52,11 +49,9 @@ const EspeciesForm: React.FC<EspeciesFormProps> = ({ initialData, onFormClose })
     for (const item of piecePoints) {
       const size = item.size;
       const points = item.points;
-
-      if (size === undefined && points === undefined) continue; // Skip empty entries
-
+      if (size === undefined && points === undefined) continue;
       if (size === undefined || points === undefined || isNaN(size) || isNaN(points)) {
-        alert('Todos los campos de Puntos y Medida deben ser números válidos si uno de ellos tiene valor.');
+        alert('Si se define Puntos o Medida para una pieza, ambos campos son obligatorios.');
         return;
       }
       finalPiecePoints.push({ size, points });
@@ -78,18 +73,38 @@ const EspeciesForm: React.FC<EspeciesFormProps> = ({ initialData, onFormClose })
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">
-        {isEditing ? 'Editar Especie' : 'Agregar Nueva Especie'}
-      </h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Form fields */}
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          {isEditing ? 'Guardar Cambios' : 'Agregar Especie'}
-        </button>
-        <button type="button" onClick={onFormClose} className="ml-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
-          Cancelar
-        </button>
+    <div className="p-6 bg-gray-50 rounded-b-lg">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Nombre de la Especie</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md" />
+        </div>
+
+        <div className="space-y-4">
+          {[0, 1, 2].map(index => (
+            <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-white rounded-md border">
+              <p className="md:col-span-2 text-md font-semibold text-gray-600">Pieza #{index + 1}</p>
+              <div>
+                <label className="block text-xs text-gray-600">Puntos</label>
+                <input type="number" placeholder="Ej: 100" value={piecePoints[index]?.points ?? ''} onChange={(e) => handlePointsChange(index, 'points', e.target.value)} className="mt-1 w-full p-2 border rounded-md" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600">Medida (cm)</label>
+                <input type="number" placeholder="Ej: 50" value={piecePoints[index]?.size ?? ''} onChange={(e) => handlePointsChange(index, 'size', e.target.value)} className="mt-1 w-full p-2 border rounded-md" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center">
+          <input type="checkbox" id="mandatorySize" checked={mandatorySize} onChange={(e) => setMandatorySize(e.target.checked)} className="h-4 w-4 rounded" />
+          <label htmlFor="mandatorySize" className="ml-2 block text-sm text-gray-900">¿La medida es obligatoria para puntuar?</label>
+        </div>
+
+        <div className="flex justify-end gap-4 pt-4 border-t">
+          <button type="button" onClick={onFormClose} className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Cancelar</button>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{isEditing ? 'Guardar Cambios' : 'Agregar Especie'}</button>
+        </div>
       </form>
     </div>
   );

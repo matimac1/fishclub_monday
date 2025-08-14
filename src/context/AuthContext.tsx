@@ -1,51 +1,59 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { onAuthStateChanged, User, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
 import { auth } from '@/firebase/firebase';
+import { stopSessionListener } from '@/services/sessionService'; // Importar para limpiar la sesión
 
-// 1. Definir la forma del contexto
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  logout: () => Promise<void>;
 }
 
-// 2. Crear el Contexto con un valor inicial
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 3. Crear el Proveedor (Provider)
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged devuelve una función para "desuscribirse"
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
+    // 1. Establecer la persistencia ANTES de suscribirse a los cambios.
+    // Esto le dice a Firebase que use localStorage para guardar la sesión.
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        // 2. Ahora que la persistencia está asegurada, nos suscribimos.
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          setUser(currentUser);
+          setLoading(false); // Se establece en false solo después de verificar
+        });
+        return unsubscribe;
+      })
+      .catch((error) => {
+        console.error("Error al establecer la persistencia de sesión:", error);
+        setLoading(false);
+      });
+  }, []);
 
-    // Limpiar el efecto: se desuscribe cuando el componente se desmonta
-    return () => unsubscribe();
-  }, []); // El array vacío asegura que el efecto se ejecute solo una vez
+  const logout = async () => {
+    stopSessionListener(); // Limpia el listener de sesión única
+    await signOut(auth);
+  };
 
-  const value = { user, loading };
+  // No renderizar nada hasta que se sepa si hay usuario o no
+  if (loading) {
+    return <div className="min-h-screen grid place-items-center">Cargando...</div>;
+  }
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// 4. Crear un Hook personalizado para usar el contexto fácilmente
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
