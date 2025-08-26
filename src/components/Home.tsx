@@ -1,137 +1,102 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useConcursantes } from '@/context/ConcursantesContext';
+// src/components/Home.tsx
 
-// Componente de botón reutilizable para el menú principal
-const ActionButton: React.FC<{ icon: string; title: string; description: string; onClick: () => void; }> = ({ icon, title, description, onClick }) => (
-    <button
-        onClick={onClick}
-        className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:bg-blue-50 transition-all text-left w-full flex items-center gap-6"
-    >
-        <div className="text-blue-600 bg-blue-100 p-4 rounded-lg">
-            <i className={`fa-solid ${icon} fa-2x`}></i>
-        </div>
-        <div>
-            <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-            <p className="text-sm text-gray-600">{description}</p>
-        </div>
-        <i className="fa-solid fa-chevron-right text-gray-400 ml-auto"></i>
-    </button>
+import React, { useState, useEffect } from 'react';
+import { getTeams } from '../services/firestoreService';
+import { Team } from '../types';
+import { FaUsers, FaFish, FaTrophy, FaChartBar, FaCertificate, FaBookOpen } from 'react-icons/fa';
+
+const DashboardCard = ({ title, description, icon, path }: { title: string; description: string; icon: React.ReactNode; path: string; }) => (
+  <a href={path} className="flex items-start bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1">
+    <div className="p-3 bg-blue-100 rounded-full text-blue-600 mr-4 flex-shrink-0">
+      {icon}
+    </div>
+    <div>
+      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+      <p className="mt-1 text-sm text-gray-500">{description}</p>
+    </div>
+    <div className="ml-4 text-gray-400">&gt;</div>
+  </a>
 );
 
-// Componente principal de la página de inicio
 const Home: React.FC = () => {
-    const navigate = useNavigate(); // Hook para la navegación
-    const { concursantes: concursantesCtx, loading } = useConcursantes();
-    const concursantes = concursantesCtx ?? [];
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    if (loading) {
-        return <p>Cargando datos de la competencia...</p>;
-    }
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const teamsData = await getTeams();
+        // Ordenamos por número de equipo de forma descendente
+        teamsData.sort((a, b) => (b.teamNumber || "").localeCompare(a.teamNumber || ""));
+        setTeams(teamsData);
+      } catch (err) {
+        setError("Error al cargar la lista de equipos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTeams();
+  }, []);
 
-    return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Bienvenido al Sistema de Competencia</h1>
-                <p className="mt-2 text-lg text-gray-600">Gestione todos los aspectos de la competencia de pesca desde aquí.</p>
-            </div>
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Bienvenido al Sistema de Competencia</h1>
+        <p className="mt-2 text-gray-600">Gestione todos los aspectos de la competencia de pesca desde aquí.</p>
+      </header>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DashboardCard title="Gestionar Concursantes" description="Añadir, ver, editar y eliminar equipos." icon={<FaUsers />} path="/manage-teams" />
+        <DashboardCard title="Gestionar Especies" description="Configurar especies, puntos y medidas." icon={<FaFish />} path="/manage-species" />
+        <DashboardCard title="Registrar Captura" description="Introduce una nueva captura para un equipo." icon={<FaTrophy />} path="/register-catch" />
+        <DashboardCard title="Ver Clasificación" description="Consultar la tabla de líderes en tiempo real." icon={<FaChartBar />} path="/leaderboard" />
+        <DashboardCard title="Generar Certificados" description="Crear e imprimir diplomas para los ganadores." icon={<FaCertificate />} path="/generate-certificates" />
+        <DashboardCard title="Ver Reglamento" description="Consultar las reglas oficiales de la competencia." icon={<FaBookOpen />} path="/rules" />
+      </div>
 
-            {/* Menú de acciones con navegación corregida */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ActionButton 
-                    icon="fa-users" 
-                    title="Gestionar Concursantes" 
-                    description="Añadir, ver, editar y eliminar equipos."
-                    onClick={() => navigate('/concursantes')}
-                />
-                 <ActionButton 
-                    icon="fa-fish-fins" 
-                    title="Gestionar Especies" 
-                    description="Configurar especies, puntos y medidas."
-                    onClick={() => navigate('/especies')}
-                />
-                <ActionButton 
-                    icon="fa-plus-circle" 
-                    title="Registrar Captura" 
-                    description="Introducir una nueva captura para un equipo."
-                    onClick={() => navigate('/register')}
-                />
-                <ActionButton 
-                    icon="fa-trophy" 
-                    title="Ver Clasificación" 
-                    description="Consultar la tabla de líderes en tiempo real."
-                    onClick={() => navigate('/leaderboard')}
-                />
-                 <ActionButton 
-                    icon="fa-chart-pie" 
-                    title="Ver Dashboard" 
-                    description="Estadísticas y reporte del día."
-                    onClick={() => navigate('/dashboard')}
-                />
-                 <ActionButton 
-                    icon="fa-cog" 
-                    title="Ajustes del Sistema" 
-                    description="Cargar el logotipo y configurar otros detalles."
-                    onClick={() => navigate('/settings')}
-                />
-                <ActionButton 
-                    icon="fa-award" 
-                    title="Generar Certificados" 
-                    description="Crear e imprimir diplomas para los ganadores."
-                    onClick={() => navigate('/certificates')}
-                />
-                <ActionButton 
-                    icon="fa-scroll" 
-                    title="Ver Reglamento" 
-                    description="Consultar las reglas oficiales de la competencia."
-                    onClick={() => navigate('/rules')}
-                />
-            </div>
+      <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Equipos Inscritos Recientemente ({teams.length})</h2>
+        {loading ? (
+          <p>Cargando lista de equipos...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : teams.length === 0 ? (
+          <p>Aún no hay equipos registrados.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"># Equipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concursantes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {teams.map((team) => {
+                  const contestants = [
+                    team.helmsmanName,
+                    ...(team.companions || []).filter(c => c.name).map(c => c.name)
+                  ].filter(Boolean).join(', ');
 
-            {/* Sección de resumen de equipos */}
-             <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Equipos Inscritos ({concursantes.length})</h2>
-                {concursantes.length > 0 ? (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="border-b-2 border-gray-200">
-                            <tr>
-                                <th className="p-3">Equipo</th>
-                                <th className="p-3">Miembros</th>
-                                <th className="p-3">Puntos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {concursantes.slice(0, 5).map(c => (
-                                <tr key={c.id} className="border-b border-gray-100">
-                                    <td className="p-3 font-semibold text-blue-600">{c.name}</td>
-                                    <td className="p-3">{c.members.join(', ')}</td>
-                                    <td className="p-3 font-bold text-gray-700">{c.totalPoints || 0}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {concursantes.length > 5 && (
-                        <div className="text-center mt-4">
-                             <button onClick={() => navigate('/concursantes')} className="text-sm font-medium text-blue-600 hover:underline">
-                                Ver todos los equipos...
-                            </button>
-                        </div>
-                    )}
-                </div>
-                 ) : (
-                    <div className="text-center text-gray-500 py-8">
-                        <i className="fa-solid fa-ship fa-2x mb-2"></i>
-                        <p>Aún no hay equipos inscritos.</p>
-                        <button onClick={() => navigate('/concursantes')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            ¡Inscribe el primer equipo!
-                        </button>
-                    </div>
-                )}
-            </div>
-
-        </div>
-    );
+                  return (
+                    <tr key={team.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.teamNumber}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{contestants}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.country}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Home;

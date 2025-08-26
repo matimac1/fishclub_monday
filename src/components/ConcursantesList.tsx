@@ -1,100 +1,104 @@
-import React, { useState } from 'react';
-import { useConcursantes } from '@/context/ConcursantesContext';
-import { Team } from '@/services/firestoreService';
-import { UsersIcon } from './icons/UsersIcon';
-import ConcursanteForm from './ConcursanteForm'; // Importamos el formulario
+// src/components/ConcursantesList.tsx
 
-// El componente ya no necesita recibir props para la navegación del formulario
-const ConcursantesList: React.FC = () => {
-    const { concursantes, loading, deleteTeam } = useConcursantes();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+import React, { useState, useEffect } from 'react';
+import { getTeams, deleteTeam } from '../services/firestoreService';
+import { Team } from '../types';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
-    const handleOpenModalForNew = () => {
-        setEditingTeam(null); // Aseguramos que no haya datos de edición
-        setIsModalOpen(true);
+interface Props {
+  onAddNewTeam: () => void;
+  onEditTeam: (team: Team) => void;
+}
+
+const ConcursantesList: React.FC<Props> = ({ onAddNewTeam, onEditTeam }) => {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      setLoading(true);
+      try {
+        const teamsData = await getTeams();
+        teamsData.sort((a, b) => (b.teamNumber || "").localeCompare(a.teamNumber || ""));
+        setTeams(teamsData);
+      } catch (err) {
+        setError("Error al cargar la lista de equipos.");
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchTeams();
+  }, []);
 
-    const handleOpenModalForEdit = (team: Team) => {
-        setEditingTeam(team);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingTeam(null);
-    };
-
-    if (loading) {
-        return <p className="text-center text-gray-600">Cargando concursantes...</p>;
+  const handleDelete = async (id: string, teamNumber: string) => {
+    if (window.confirm(`¿Seguro que quieres eliminar el equipo ${teamNumber}?`)) {
+      try {
+        await deleteTeam(id);
+        setTeams(teams.filter(team => team.id !== id));
+      } catch (err) {
+        setError("Error al eliminar el equipo.");
+      }
     }
+  };
 
-    return (
-        <>
-            <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center gap-4">
-                        <UsersIcon className="h-8 w-8 text-blue-600" />
-                        <h2 className="text-2xl font-bold text-gray-800">Lista de Concursantes</h2>
-                    </div>
-                    <button
-                        onClick={handleOpenModalForNew}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        + Agregar Nuevo Equipo
-                    </button>
-                </div>
+  return (
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Lista de Concursantes</h2>
+        <button
+          onClick={onAddNewTeam}
+          className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+        >
+          + Agregar Nuevo Equipo
+        </button>
+      </div>
+      
+      {loading && <p>Cargando lista de concursantes...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+      {!loading && !error && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"># Equipo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concursantes</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País</th>
+                <th className="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {teams.map((team) => {
+                // Lógica para unir al timonel y los acompañantes
+                const contestants = [
+                  team.helmsmanName,
+                  ...(team.companions || []).filter(c => c.name).map(c => c.name)
+                ].filter(Boolean).join(', ');
 
-                <div className="overflow-x-auto">
-                    {/* ... El resto de la tabla de concursantes ... */}
-                    <table className="w-full min-w-[800px] text-left">
-                        <thead>
-                            <tr className="border-b-2 border-gray-200">
-                                <th className="p-4">#</th>
-                                <th className="p-4">Equipo / Embarcación</th>
-                                <th className="p-4">Miembros</th>
-                                <th className="p-4">Puntos</th>
-                                <th className="p-4 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {concursantes.map((concursante, index) => (
-                                <tr key={concursante.id} className="border-b border-gray-100 hover:bg-blue-50">
-                                    <td className="p-4 font-bold text-blue-600">{index + 1}</td>
-                                    <td className="p-4 font-medium">{concursante.name}</td>
-                                    <td className="p-4 text-gray-600">{concursante.members.join(', ')}</td>
-                                    <td className="p-4 font-semibold">{concursante.totalPoints || 0}</td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center gap-4">
-                                            <button onClick={() => handleOpenModalForEdit(concursante)} className="text-blue-600 hover:text-blue-800" title="Editar">
-                                                <i className="fa-solid fa-pencil"></i>
-                                            </button>
-                                            <button onClick={() => deleteTeam(concursante.id)} className="text-red-600 hover:text-red-800" title="Eliminar">
-                                                <i className="fa-solid fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Renderizado condicional del Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl">
-                        <ConcursanteForm 
-                            initialData={editingTeam}
-                            onFormSubmit={handleCloseModal} // Cierra el modal al guardar
-                            onCancel={handleCloseModal} // Cierra el modal al cancelar
-                        />
-                    </div>
-                </div>
-            )}
-        </>
-    );
+                return (
+                  <tr key={team.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.teamNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{contestants}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.club}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.country}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button onClick={() => onEditTeam(team)} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                        <FaEdit className="h-5 w-5 inline-block" />
+                      </button>
+                      <button onClick={() => handleDelete(team.id, team.teamNumber || team.id)} className="text-red-600 hover:text-red-900">
+                        <FaTrash className="h-5 w-5 inline-block" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default ConcursantesList;

@@ -1,4 +1,3 @@
-
 export type Sexo = 'Masculino' | 'Femenino' | '';
 export type Categoria = 'Infantil' | 'Juvenil' | 'Damas' | 'Adultos (Masculino)' | 'Senior' | 'Máster' | '';
 
@@ -70,3 +69,28 @@ export interface CertificateTemplate {
 
 
 export type Page = 'home' | 'dashboard' | 'leaderboard' | 'register' | 'rules' | 'concursantes' | 'concursanteForm' | 'especies' | 'settings' | 'certificates';
+
+export interface TeamFormData {
+  club: string;
+  country: string;
+  category: 'Nacional' | 'Internacional';
+  distance: number | null;
+  helmsmanName: string;
+  helmsmanDob: string; // Antes era 'helmsmanAge: number | null'
+  helmsmanSex: 'Masculino' | 'Femenino' | '';
+  helmsmanCategory: string;
+  contactPhone: string;
+  companions?: Companion[];
+  boatName?: string;
+  boatRegistration?: string;
+  helmsmanAgeString?: string; // Nuevo campo
+  teamNumber: string; // Ej: "001"
+}
+
+export interface Companion {
+  name: string;
+  dob: string; // Antes era 'age: number | null'
+  sex: 'Masculino' | 'Femenino' | '';
+  ageString?: string; // Nuevo campo para la edad calculada
+  category?: string;
+}

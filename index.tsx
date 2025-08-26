@@ -21,6 +21,7 @@ import EspeciesPecesCRUD from '@/components/EspeciesPecesCRUD';
 import Leaderboard from '@/components/Leaderboard';
 import GenerateCertificates from '@/components/GenerateCertificates';
 import Rules from '@/components/Rules';
+import ManageTeams from '@/pages/ManageTeams';
 
 import './index.css';
 
@@ -33,7 +34,7 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'register', element: <RegisterCatch /> },
-      { path: 'concursantes', element: <ConcursantesList /> },
+      { path: 'manage-teams', element: <ManageTeams /> },
       { path: 'settings', element: <Settings /> },
       { path: 'especies', element: <EspeciesPecesCRUD /> },
       { path: 'leaderboard', element: <Leaderboard /> },
