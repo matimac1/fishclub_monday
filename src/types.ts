@@ -23,18 +23,16 @@ export interface Concursante {
   totalPoints: number;
 }
 
-export interface EspeciePez {
-    id: number;
-    nombre: string;
-    puntuacionPieza1: number;
-    puntuacionPieza2: number;
-    puntuacionPieza3: number;
-    medidaCmPieza1: number;
-    medidaCmPieza2: number;
-    medidaCmPieza3: number;
-    medidaObligatoriaPieza1: boolean;
-    medidaObligatoriaPieza2: boolean;
-    medidaObligatoriaPieza3: boolean;
+export interface PieceRule {
+  points: number;
+  size: number;
+  isMandatory: boolean;
+}
+
+export interface Species {
+  id: string;
+  name: string;
+  rules: PieceRule[]; // Un array que contendrá hasta 3 reglas
 }
 
 export interface Catch {

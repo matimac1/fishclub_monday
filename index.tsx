@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import ManageSpecies from './src/pages/ManageSpecies';
 
 // Providers
 import { AuthProvider } from '@/context/AuthContext';
@@ -40,6 +41,8 @@ const router = createBrowserRouter([
       { path: 'leaderboard', element: <Leaderboard /> },
       { path: 'certificates', element: <GenerateCertificates /> },
       { path: 'rules', element: <Rules /> },
+      { path: 'manage-species', element: <ManageSpecies /> },
+      { path: 'manage-species', element: <ManageSpecies /> },
     ],
   },
 ]);

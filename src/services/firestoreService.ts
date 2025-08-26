@@ -141,7 +141,7 @@ export const deleteTeam = async (id: string) => {
 // --- Species ---
 export const getSpecies = () => fetchData<Species>('species');
 export const addEspecie = (specieData: Omit<Species, 'id'>) => addDoc(collection(db, 'species'), specieData);
-export const updateEspecie = (id: string, specieData: Partial<Species>) => updateDoc(doc(db, 'species', id), specieData);
+export const updateEspecie = (id: string, specieData: Partial<Omit<Species, 'id'>>) => updateDoc(doc(db, 'species', id), specieData);
 export const deleteEspecie = (id: string) => deleteDoc(doc(db, 'species', id));
 
 
