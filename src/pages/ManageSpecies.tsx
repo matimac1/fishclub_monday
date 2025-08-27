@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { getSpecies, addEspecie, updateEspecie, deleteEspecie } from '../services/firestoreService';
 import { Species, PieceRule } from '../types';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { useFiltro } from '../hooks/useFiltro';
 
-// --- Componente del Formulario (Refactorizado con Estilo y Layout Correctos) ---
+// --- Componente del Formulario (sin cambios) ---
 const SpeciesForm: React.FC<{
   onSuccess: () => void;
   onCancel: () => void;
   initialData?: Species | null;
 }> = ({ onSuccess, onCancel, initialData }) => {
-  
   const [name, setName] = useState('');
   const [rules, setRules] = useState<PieceRule[]>([
     { points: 0, size: 0, isMandatory: false },
@@ -29,7 +29,6 @@ const SpeciesForm: React.FC<{
       );
       setRules(initialRules);
     } else {
-      // Resetea el formulario si no hay datos iniciales
       setName('');
       setRules([
         { points: 0, size: 0, isMandatory: false },
@@ -43,7 +42,7 @@ const SpeciesForm: React.FC<{
     const newRules = [...rules];
     const numericValue = typeof value === 'string' ? parseInt(value, 10) || 0 : value;
     // @ts-ignore
-    newRules[index][field] = value === false || value === true ? value : numericValue; // Maneja booleano y número
+    newRules[index][field] = value === false || value === true ? value : numericValue;
     setRules(newRules);
   };
 
@@ -78,8 +77,6 @@ const SpeciesForm: React.FC<{
           <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Especie *</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="bg-white block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" />
         </div>
-
-        {/* --- FILA DE PUNTOS --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rules.map((rule, index) => (
             <div key={`points-${index}`}>
@@ -88,8 +85,6 @@ const SpeciesForm: React.FC<{
             </div>
           ))}
         </div>
-
-        {/* --- FILA DE MEDIDAS Y CHECKBOXES --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rules.map((rule, index) => (
             <div key={`size-${index}`}>
@@ -101,7 +96,6 @@ const SpeciesForm: React.FC<{
             </div>
           ))}
         </div>
-        
         <div className="flex justify-end gap-4 pt-4">
           <button type="button" onClick={onCancel} className="bg-white text-gray-800 py-2 px-4 rounded-lg border border-gray-300 hover:bg-gray-100">Cancelar</button>
           <button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400">
@@ -120,7 +114,10 @@ const ManageSpecies: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isFormVisible, setIsFormVisible] = useState(false);
     const [editingSpecies, setEditingSpecies] = useState<Species | null>(null);
-  
+    
+    // El hook ahora nos da las herramientas para controlar el input
+    const { busqueda, setBusqueda, datosFiltrados } = useFiltro(speciesList, 'name');
+
     const loadSpecies = async () => {
         setLoading(true);
         try {
@@ -162,7 +159,7 @@ const ManageSpecies: React.FC = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Gestión de Especies de Peces</h1>
+            <h1 className="text-3xl font-bold">Gestión de Especies de Peces</h1>
             {!isFormVisible && (
               <button onClick={handleAddNew} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
                 <FaPlus /> Agregar Nueva Especie
@@ -175,6 +172,15 @@ const ManageSpecies: React.FC = () => {
           )}
     
           <div className="p-6 bg-white rounded-lg shadow-md">
+            {/* Renderizamos nuestro propio input aquí */}
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre de especie..."
+              className="block w-full max-w-sm border border-gray-300 rounded-md shadow-sm py-2 px-3 mb-4"
+            />
+
             {loading && <p>Cargando...</p>}
             {error && <p className="text-red-500">{error}</p>}
             {!loading && !error && (
@@ -193,7 +199,7 @@ const ManageSpecies: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {speciesList.map(s => (
+                    {datosFiltrados.map(s => (
                       <tr key={s.id}>
                         <td className="px-3 py-4 whitespace-nowrap font-medium">{s.name}</td>
                         <td className="px-3 py-4 text-center">{(s.rules[0]?.points) || '-'}</td>

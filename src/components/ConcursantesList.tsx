@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getTeams, deleteTeam } from '../services/firestoreService';
 import { Team } from '../types';
 import { FaEdit, FaTrash } from 'react-icons/fa';
+import { useFiltro } from '../hooks/useFiltro';
 
 interface Props {
   onAddNewTeam: () => void;
@@ -15,12 +16,18 @@ const ConcursantesList: React.FC<Props> = ({ onAddNewTeam, onEditTeam }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Añadimos 'companions' al array de campos de búsqueda
+  const { busqueda, setBusqueda, datosFiltrados } = useFiltro(
+    teams, 
+    ['teamNumber', 'club', 'helmsmanName', 'companions']
+  );
+
   useEffect(() => {
     const fetchTeams = async () => {
       setLoading(true);
       try {
         const teamsData = await getTeams();
-        teamsData.sort((a, b) => (b.teamNumber || "").localeCompare(a.teamNumber || ""));
+        teamsData.sort((a, b) => (a.teamNumber || "").localeCompare(b.teamNumber || "", undefined, { numeric: true }));
         setTeams(teamsData);
       } catch (err) {
         setError("Error al cargar la lista de equipos.");
@@ -46,15 +53,20 @@ const ConcursantesList: React.FC<Props> = ({ onAddNewTeam, onEditTeam }) => {
     <div className="p-6 bg-white rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Lista de Concursantes</h2>
-        <button
-          onClick={onAddNewTeam}
-          className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
+        <button onClick={onAddNewTeam} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
           + Agregar Nuevo Equipo
         </button>
       </div>
+
+      <input
+        type="text"
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        placeholder="Buscar por # Equipo, Club o Concursante..."
+        className="block w-full max-w-sm border border-gray-300 rounded-md shadow-sm py-2 px-3 mb-4"
+      />
       
-      {loading && <p>Cargando lista de concursantes...</p>}
+      {loading && <p>Cargando lista...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {!loading && !error && (
         <div className="overflow-x-auto">
@@ -69,8 +81,7 @@ const ConcursantesList: React.FC<Props> = ({ onAddNewTeam, onEditTeam }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {teams.map((team) => {
-                // Lógica para unir al timonel y los acompañantes
+              {datosFiltrados.map((team) => {
                 const contestants = [
                   team.helmsmanName,
                   ...(team.companions || []).filter(c => c.name).map(c => c.name)
